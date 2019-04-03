@@ -24,7 +24,7 @@ let lines_positions = []; //to get and update positions for lines
 let lines_colors = []; //to get and update colors alpha for lines
 let character_groups = []; //Groups collectives for easy manipulation
 //Store data related to user input
-let total_characters = 1;
+let total_characters = 4;
 //Development variable
 let drawline = true;
 
@@ -308,8 +308,14 @@ function init() {
     //     let query_info= {use_name: false, name: "", id: i};
     //     get_character(query_info, i-169);
     // }
-    let query_info= {use_name: false, name: "", id: 31};
+    let query_info= {use_name: true, name: "喜", id: ""};
     get_character(query_info, 0);
+    let query_info= {use_name: true, name: "欢", id: ""};
+    get_character(query_info, 1);
+    let query_info= {use_name: true, name: "养", id: ""};
+    get_character(query_info, 2);
+    let query_info= {use_name: true, name: "狗", id: ""};
+    get_character(query_info, 3);
 
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
