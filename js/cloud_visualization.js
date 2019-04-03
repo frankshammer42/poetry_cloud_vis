@@ -78,10 +78,10 @@ function get_character(query_info, index){
     console.log("Start Getting character from database");
     let character_query = "";
     if (query_info.use_name){
-        character_query = 'http://localhost:3000/api/characters/name/'+ query_info.name;
+        character_query = 'https://poetrycloud.herokuapp.com/api/characters/name/'+ query_info.name;
     }
     else{
-        character_query = 'http://localhost:3000/api/characters/id/'+ query_info.id;
+        character_query = 'https://poetrycloud.herokuapp.com/api/characters/id/'+ query_info.id;
     }
     "use strict";
     let flattend_particle_positions;
