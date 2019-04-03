@@ -310,11 +310,11 @@ function init() {
     // }
     let query_info= {use_name: true, name: "喜", id: ""};
     get_character(query_info, 0);
-    let query_info= {use_name: true, name: "欢", id: ""};
+    query_info= {use_name: true, name: "欢", id: ""};
     get_character(query_info, 1);
-    let query_info= {use_name: true, name: "养", id: ""};
+    query_info= {use_name: true, name: "养", id: ""};
     get_character(query_info, 2);
-    let query_info= {use_name: true, name: "狗", id: ""};
+    query_info= {use_name: true, name: "狗", id: ""};
     get_character(query_info, 3);
 
 
