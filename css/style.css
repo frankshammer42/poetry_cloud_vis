@@ -1,0 +1,48 @@
+.input_holder  {
+    position: relative;
+}
+input {
+    font-size:15px;
+    background: rgba(255,255,255,0.02);
+    border: none;
+    position: relative;
+    display: block;
+    outline: none;
+    width: 400px;
+    height: 20px;
+    top: 90vh;
+    margin: 0 auto;
+    padding: 10px;
+    color: #ffffff;
+    -webkit-box-shadow: 0 2px 10px 1px rgba(0,0,0,0.5);
+    box-shadow: 0 2px 10px 1px rgba(0,0,0,0.5);
+    z-index: 1;
+}
+/*::-webkit-input-placeholder { color: #666;}*/
+/*:-moz-placeholder { color: #666; }*/
+/*::-moz-placeholder { color: #666; }*/
+/*:-ms-input-placeholder { color: #666; }*/
+
+
+body {
+    color: #cccccc;
+    font-family:Monospace;
+    font-size:13px;
+    text-align:center;
+
+    background-color: #000000;
+    margin: 0px;
+    overflow: hidden;
+}
+
+#info {
+    position: absolute;
+    top: 0px; width: 100%;
+    padding: 5px;
+}
+
+a {
+    color: #0080ff;
+}
+
+

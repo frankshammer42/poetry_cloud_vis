@@ -1,0 +1,23 @@
+{
+  "name": "cloudvisuals",
+  "version": "1.0.0",
+  "description": "Visualz for poetry cloud",
+  "authors": [
+    "Rui An"
+  ],
+  "babel": {
+    "presets": [
+      "env"
+    ]
+  },
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.3",
+    "mongoose": "^4.10.0",
+    "nodemon": "^1.11.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0"
+  }
+}
