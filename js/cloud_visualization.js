@@ -28,11 +28,79 @@ let total_characters = 4;
 //Development variable
 let drawline = true;
 
-//Main Loop
+//----------------------------------------------------------------
+//Variables for Posenet integration
+//TODO: Hide the video feed
+//Initialize video variables
+const video = document.createElement('video');
+const vidDiv = document.getElementById('vid_container');
+video.setAttribute('width', 255);
+video.setAttribute('height', 255);
+video.autoplay = true;
+vidDiv.appendChild(video);
+//Initialize video
+navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+.then(function(stream) {
+    video.srcObject = stream;
+})
+.catch(function(err) {
+    console.log("An error occurred! " + err);
+});
+//Create Posenet variable
+const options = {
+    flipHorizontal: true,
+    minConfidence: 0.5
+};
+const poseNet = ml5.poseNet(video, options, modelReady);
+let prev_x = 100;
+let prev_y = 100;
+let settled_array = []; //Don't change after settled
+let current_index = 0;
+let query_info_array = [];
+
+
+//Main Loop------------------------------------------------------
+let nose = {};
+poseNet.on('pose',  function(results) {
+    let poses = results;
+    loopThroughPoses(poses, nose);
+    let estimatedNose = {
+        x: nose.x,
+        y: nose.y
+    };
+    if (estimatedNose.x && estimatedNose.y){
+        render(estimatedNose);
+    }
+});
 init();
 animate();
 document.addEventListener("keydown", onDocumentKeyDown, false);
+//----------------------------------------------------------------
 
+function modelReady(){
+    console.log("PoseNet Model Ready to use");
+}
+
+function loopThroughPoses(poses, wrist){
+    for (let i = 0; i < poses.length; i++) {
+        let pose = poses[i].pose;
+        for (let j = 0; j < pose.keypoints.length; j++) {
+            let keypoint = pose.keypoints[j];
+            if (keypoint.score > 0.2 && keypoint.part === 'nose' ) {
+                wrist.x = keypoint.position.x;
+                wrist.y = keypoint.position.y;
+            }
+        }
+    }
+}
+
+function settle(){
+    settled_array.push(true);
+    current_index++;
+    if (current_index < total_characters){
+        get_character(query_info_array[current_index-1], current_index);
+    }
+}
 
 function onDocumentKeyDown(event){
     let key_code = event.which;
@@ -209,7 +277,6 @@ function get_character(query_info, index){
     character_groups.push(current_group);
 }
 
-
 //Helper function for animation
 function update_character(index){
     "use strict";
@@ -293,8 +360,6 @@ function update_character(index){
 
 }
 
-
-
 function init() {
     container = document.getElementById( 'container' );
     camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 1, 4000 );
@@ -308,14 +373,24 @@ function init() {
     //     let query_info= {use_name: false, name: "", id: i};
     //     get_character(query_info, i-169);
     // }
-    let query_info= {use_name: true, name: "喜", id: ""};
-    get_character(query_info, 0);
-    query_info= {use_name: true, name: "欢", id: ""};
-    get_character(query_info, 1);
-    query_info= {use_name: true, name: "养", id: ""};
-    get_character(query_info, 2);
-    query_info= {use_name: true, name: "狗", id: ""};
-    get_character(query_info, 3);
+    let query_info= {use_name: true, name: "穷", id: ""};
+    get_character(query_info, current_index);
+    query_info_array.push({use_name: true, name: "困", id: ""});
+    query_info_array.push({use_name: true, name: "潦", id: ""});
+    query_info_array.push({use_name: true, name: "倒", id: ""});
+
+    // query_info= {use_name: true, name: "欢", id: ""};
+    // get_character(query_info, 1);
+    // query_info= {use_name: true, name: "养", id: ""};
+    // get_character(query_info, 2);
+    // query_info= {use_name: true, name: "狗", id: ""};
+    // get_character(query_info, 3);
+
+    // create the Cube for debug
+    // cube = new THREE.Mesh( new THREE.CubeGeometry( 200, 200, 200 ), new THREE.MeshNormalMaterial() );
+    // cube.position.y = 150;
+    // // add the object to the scene
+    // scene.add(cube);
 
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -340,21 +415,39 @@ function onWindowResize() {
 }
 
 function animate() {
-    for (let i=0; i<total_characters; i++){
-        update_character(i);
+    if (current_index < total_characters){
+        for (let i=0; i<current_index+1; i++){
+            update_character(i);
+        }
+    }
+    else{
+        for (let i=0; i<total_characters; i++){
+            update_character(i);
+        }
     }
     // update_character(0);
     requestAnimationFrame( animate );
     stats.update();
-    render();
+    render(nose);
 }
 
-function render() {
-
+function render(nose) {
+    let changeX = 1;
+    let changeY = 1;
+    if (current_index < total_characters){
+        if ((current_index > 0 && settled_array[current_index-1]) || current_index === 0){
+            if (Object.keys(nose).length !== 0){
+                changeX = nose.x - prev_x;
+                changeY = nose.y - prev_y;
+                character_groups[current_index].position.x += (changeX * 3);
+                character_groups[current_index].position.y += -(changeY * 3);
+                prev_x = nose.x;
+                prev_y = nose.y;
+            }
+        }
+    }
     let time = Date.now() * 0.001;
-
     // group.rotation.y = time * 0.1;
     renderer.render( scene, camera );
-
 }
 
