@@ -1,13 +1,7 @@
-//TODO: Experiment with Asynchronous call
-//TODO: Convert all things to local coordinates using class
 //TODO: Add User interactions
 //TODO: Add Image Particles
-//TODO: Camera Movements
-//TODO: Make Separate Modules
-//TODO: Load Separate Textures on the particles <- this shit looks whack af
-//TODO: Input Validation
-//TODO: Create Slider to control offset and other variables for experimentation
-//Set Up Variables
+//TODO: Add Character References
+//Set Up Variables----------------------------------------------------------------------
 let container, stats;
 let camera, scene, renderer;
 let maxParticleCount = 300;
@@ -24,104 +18,92 @@ let lines_positions = []; //to get and update positions for lines
 let lines_colors = []; //to get and update colors alpha for lines
 let character_groups = []; //Groups collectives for easy manipulation
 //Store data related to user input
-let total_characters = 4;
+let total_characters = 3;
 //Development variable
 let drawline = true;
-
-//----------------------------------------------------------------
-//Variables for Posenet integration
-//TODO: Hide the video feed
-//Initialize video variables
-const video = document.createElement('video');
-const vidDiv = document.getElementById('vid_container');
-video.setAttribute('width', 255);
-video.setAttribute('height', 255);
-video.autoplay = true;
-vidDiv.appendChild(video);
-//Initialize video
-navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-.then(function(stream) {
-    video.srcObject = stream;
-})
-.catch(function(err) {
-    console.log("An error occurred! " + err);
-});
-//Create Posenet variable
-const options = {
-    flipHorizontal: true,
-    minConfidence: 0.5
-};
-const poseNet = ml5.poseNet(video, options, modelReady);
-let prev_x = 100;
-let prev_y = 100;
-let settled_array = []; //Don't change after settled
-let current_index = 0;
-let query_info_array = [];
+let debug_start_num = 20;
+//User Control Variable---------------------------------------------------------------
+let raycaster;
+let mouse;
+let characters_in_scene = [];
+let current_character_index_to_control = null;
 
 
 //Main Loop------------------------------------------------------
-let nose = {};
-poseNet.on('pose',  function(results) {
-    let poses = results;
-    loopThroughPoses(poses, nose);
-    let estimatedNose = {
-        x: nose.x,
-        y: nose.y
-    };
-    if (estimatedNose.x && estimatedNose.y){
-        render(estimatedNose);
-    }
-});
 init();
 animate();
 document.addEventListener("keydown", onDocumentKeyDown, false);
-//----------------------------------------------------------------
+document.addEventListener("mousemove", onMouseMove, false);
 
-function modelReady(){
-    console.log("PoseNet Model Ready to use");
-}
 
-function loopThroughPoses(poses, wrist){
-    for (let i = 0; i < poses.length; i++) {
-        let pose = poses[i].pose;
-        for (let j = 0; j < pose.keypoints.length; j++) {
-            let keypoint = pose.keypoints[j];
-            if (keypoint.score > 0.2 && keypoint.part === 'nose' ) {
-                wrist.x = keypoint.position.x;
-                wrist.y = keypoint.position.y;
-            }
-        }
-    }
-}
-
-function settle(){
-    settled_array.push(true);
-    current_index++;
-    if (current_index < total_characters){
-        get_character(query_info_array[current_index-1], current_index);
-    }
-}
-
+//Event Related Functions----------------------------------------------------------------
 function onDocumentKeyDown(event){
     let key_code = event.which;
-    if (key_code === 82){
+    if (key_code === 32){
         reset_scene();
     }
     //Get Input From User
     if (key_code === 13){
         let characters = document.getElementById("characters_input").value;
         console.log(characters);
-        if (characters.length > 0){
-            reset_scene();
+        if (characters.length >= 0){
+            // reset_scene();
             for (let i=0; i<characters.length; i++){
                 let query_info= {use_name: true, name: characters[i], id: i};
                 get_character(query_info, i);
             }
             document.getElementById("characters_input").value = "";
-            total_characters = characters.length;
+            total_characters += characters.length;
         }
     }
 }
+
+function onMouseMove(event){
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+}
+
+function openNav() {
+    document.getElementById("mySidenav").style.width = "250px";
+}
+
+function closeNav() {
+    document.getElementById("mySidenav").style.width = "0";
+}
+
+function submitTransform() {
+    let position_x = extractNumber(document.getElementById("position_x").value);
+    let position_y = extractNumber(document.getElementById("position_y").value);
+    let position_z = extractNumber(document.getElementById("position_z").value);
+    let rotation_x = extractNumber(document.getElementById("rotation_x").value);
+    let rotation_y = extractNumber(document.getElementById("rotation_y").value);
+    let rotation_z = extractNumber(document.getElementById("rotation_z").value);
+    document.getElementById("position_x").value = "";
+    document.getElementById("position_y").value = "";
+    document.getElementById("position_z").value = "";
+    document.getElementById("rotation_x").value = "";
+    document.getElementById("rotation_y").value = "";
+    document.getElementById("rotation_z").value = "";
+    if (current_character_index_to_control !== null){
+        character_groups[current_character_index_to_control].position.x = position_x;
+        character_groups[current_character_index_to_control].position.y = position_y;
+        character_groups[current_character_index_to_control].position.z = position_z;
+        character_groups[current_character_index_to_control].rotation.x = rotation_x;
+        character_groups[current_character_index_to_control].rotation.y = rotation_y;
+        character_groups[current_character_index_to_control].rotation.z = rotation_z;
+    }
+}
+
+function extractNumber(input){
+    let result = parseFloat(input);
+    if (isNaN(result)){
+        return 0;
+    }
+    else{
+        return result;
+    }
+}
+//-------------------------------------------------------------------------------------------------------
 
 function reset_scene(){
     console.log("Reset the Scene");
@@ -139,6 +121,7 @@ function reset_scene(){
     lines_colors = [];
     character_groups = [];
     total_characters = 0;
+    characters_in_scene = [];
 }
 
 //Index is for applying offset to display on screen
@@ -169,6 +152,9 @@ function get_character(query_info, index){
     console.log(JSON.parse(request.responseText).data.name);
     if (request.status === 200) {
         flattend_particle_positions = JSON.parse(request.responseText).data.inks;
+        if (query_info.use_name){
+            characters_in_scene.push(query_info.name);
+        }
     }
 
     particleCount = flattend_particle_positions.length / 3;
@@ -361,6 +347,8 @@ function update_character(index){
 }
 
 function init() {
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
     container = document.getElementById( 'container' );
     camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 1, 4000 );
     // camera.position.z = 1750;
@@ -369,29 +357,16 @@ function init() {
     let controls = new THREE.OrbitControls( camera, container );
 
     scene = new THREE.Scene();
-    // for (let i=169; i<173; i++){
+    // for (let i=debug_start_num; i<20+total_characters; i++){
     //     let query_info= {use_name: false, name: "", id: i};
-    //     get_character(query_info, i-169);
+    //     get_character(query_info, i-debug_start_num);
     // }
-    let query_info= {use_name: true, name: "穷", id: ""};
-    get_character(query_info, current_index);
-    query_info_array.push({use_name: true, name: "困", id: ""});
-    query_info_array.push({use_name: true, name: "潦", id: ""});
-    query_info_array.push({use_name: true, name: "倒", id: ""});
-
-    // query_info= {use_name: true, name: "欢", id: ""};
-    // get_character(query_info, 1);
-    // query_info= {use_name: true, name: "养", id: ""};
-    // get_character(query_info, 2);
-    // query_info= {use_name: true, name: "狗", id: ""};
-    // get_character(query_info, 3);
-
-    // create the Cube for debug
-    // cube = new THREE.Mesh( new THREE.CubeGeometry( 200, 200, 200 ), new THREE.MeshNormalMaterial() );
-    // cube.position.y = 150;
-    // // add the object to the scene
-    // scene.add(cube);
-
+    let query_info= {use_name: true, name: "旺", id: ""};
+    get_character(query_info, 0);
+    query_info= {use_name: true, name: "天", id: ""};
+    get_character(query_info, 1);
+    query_info= {use_name: true, name: "下", id: ""};
+    get_character(query_info, 2);
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
@@ -415,34 +390,28 @@ function onWindowResize() {
 }
 
 function animate() {
-    if (current_index < total_characters){
-        for (let i=0; i<current_index+1; i++){
-            update_character(i);
-        }
+    for (let i=0; i<total_characters; i++){
+        update_character(i);
     }
-    else{
-        for (let i=0; i<total_characters; i++){
-            update_character(i);
-        }
-    }
-    // update_character(0);
     requestAnimationFrame( animate );
     stats.update();
-    render(nose);
+    render();
 }
 
-function render(nose) {
-    let changeX = 1;
-    let changeY = 1;
-    if (current_index < total_characters){
-        if ((current_index > 0 && settled_array[current_index-1]) || current_index === 0){
-            if (Object.keys(nose).length !== 0){
-                changeX = nose.x - prev_x;
-                changeY = nose.y - prev_y;
-                character_groups[current_index].position.x += (changeX * 3);
-                character_groups[current_index].position.y += -(changeY * 3);
-                prev_x = nose.x;
-                prev_y = nose.y;
+function render() {
+    if (character_groups.length > 0){
+        raycaster.setFromCamera( mouse, camera );
+        for (let i=0; i<character_groups.length; i++){
+            let intersects = raycaster.intersectObjects(character_groups[i].children, true);
+            if (intersects.length > 0){
+                document.getElementById("zi_info").textContent = "Control Transform of " + characters_in_scene[i];
+                document.getElementById("zi_x_position").textContent = character_groups[i].position.x;
+                document.getElementById("zi_y_position").textContent = character_groups[i].position.y;
+                document.getElementById("zi_z_position").textContent = character_groups[i].position.z;
+                document.getElementById("zi_x_rotation").textContent = character_groups[i].rotation.x;
+                document.getElementById("zi_y_rotation").textContent = character_groups[i].rotation.y;
+                document.getElementById("zi_z_rotation").textContent = character_groups[i].rotation.z;
+                current_character_index_to_control = i;
             }
         }
     }
