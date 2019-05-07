@@ -2,8 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fe0fe188-3455-49aa-b758-3a264cdc8f04" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/audio.mp3" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/index.html" afterPath="$PROJECT_DIR$/index.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/cloud_visualization.js" afterPath="$PROJECT_DIR$/js/cloud_visualization.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
     <ignored path="$PROJECT_DIR$/temp/" />
@@ -17,10 +16,10 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="index.html" pinned="false" current-in-tab="true">
+      <file leaf-file-name="index.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/index.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="412">
+            <state relative-caret-position="600">
               <caret line="40" column="30" lean-forward="false" selection-start-line="40" selection-start-column="30" selection-end-line="40" selection-end-column="30" />
               <folding>
                 <element signature="e#571#578#1" expanded="true" />
@@ -52,11 +51,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="cloud_visualization.js" pinned="false" current-in-tab="false">
+      <file leaf-file-name="cloud_visualization.js" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/js/cloud_visualization.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="189">
-              <caret line="723" column="4" lean-forward="false" selection-start-line="723" selection-start-column="4" selection-end-line="723" selection-end-column="4" />
+            <state relative-caret-position="304">
+              <caret line="56" column="24" lean-forward="false" selection-start-line="56" selection-start-column="24" selection-end-line="56" selection-end-column="24" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
                 <element signature="n#!!block;n#submitTransform#0" expanded="false" />
@@ -125,8 +124,8 @@
         <option value="$PROJECT_DIR$/css/style.css" />
         <option value="$PROJECT_DIR$/data/color_data" />
         <option value="$PROJECT_DIR$/shaders/vertextDisplacement.glsl" />
-        <option value="$PROJECT_DIR$/js/cloud_visualization.js" />
         <option value="$PROJECT_DIR$/index.html" />
+        <option value="$PROJECT_DIR$/js/cloud_visualization.js" />
       </list>
     </option>
   </component>
@@ -210,12 +209,12 @@
       <workItem from="1556645782193" duration="185000" />
       <workItem from="1556676337659" duration="6716000" />
       <workItem from="1557069541065" duration="590000" />
-      <workItem from="1557084397480" duration="43511000" />
+      <workItem from="1557084397480" duration="43771000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="63789000" />
+    <option name="totallyTimeSpent" value="64049000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -582,6 +581,24 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/css/style.css">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-280">
+          <caret line="20" column="46" lean-forward="false" selection-start-line="20" selection-start-column="46" selection-end-line="20" selection-end-column="46" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/index.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="600">
+          <caret line="40" column="30" lean-forward="false" selection-start-line="40" selection-start-column="30" selection-end-line="40" selection-end-column="30" />
+          <folding>
+            <element signature="e#571#578#1" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/shaders/vertextDisplacement.glsl">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1050">
@@ -593,34 +610,16 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/css/style.css">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-280">
-          <caret line="20" column="46" lean-forward="false" selection-start-line="20" selection-start-column="46" selection-end-line="20" selection-end-column="46" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/js/cloud_visualization.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="189">
-          <caret line="723" column="4" lean-forward="false" selection-start-line="723" selection-start-column="4" selection-end-line="723" selection-end-column="4" />
+        <state relative-caret-position="304">
+          <caret line="56" column="24" lean-forward="false" selection-start-line="56" selection-start-column="24" selection-end-line="56" selection-end-column="24" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
             <element signature="n#!!block;n#submitTransform#0" expanded="false" />
             <element signature="n#!!block;n#extractNumber#0" expanded="false" />
             <element signature="n#!!block;n#get_image#0" expanded="false" />
             <element signature="n#!!block;n#update_image#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/index.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="412">
-          <caret line="40" column="30" lean-forward="false" selection-start-line="40" selection-start-column="30" selection-end-line="40" selection-end-column="30" />
-          <folding>
-            <element signature="e#571#578#1" expanded="true" />
           </folding>
         </state>
       </provider>

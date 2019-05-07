@@ -54,7 +54,7 @@ let img_group;
 //Camera Movement Tween Variable
 let cameraPositionTween;
 let cameraLookAtTween;
-let cameraMovmentTime = 4000;
+let cameraMovmentTime = 6000;
 let characterIndexToMove = 0;
 let prevCharacterIndexToMove = 0; //To Make a whole trip
 let indexMapToArrayIndex = {};
