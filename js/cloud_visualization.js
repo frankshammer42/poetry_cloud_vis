@@ -1,13 +1,22 @@
-//TODO: Add User interactions
-//TODO: Add Image Particles
-//TODO: Add Character References
+//TODO: Turn down particle speed
+//TODO: Add Modal Image
+//TODO: Need to add user input guides
+//TODO: Don't Allow user to move camera when in progress
+
+/*
+Press R to Reset the Scene
+Press Space to Move to next character
+ */
+
 //Set Up Variables----------------------------------------------------------------------
 let container, stats;
 let camera, scene, renderer;
 let maxParticleCount = 300;
-let r = 500;
+let r = 800;
 let rHalf = r / 2;
-let offset = 50;
+let imgr = 20;
+let imgRhalf = imgr/2;
+let offset = 100; //Space between characters
 //Group Variables
 let particles_counts = [];
 let particles_point_clouds = []; //Particles geometries for characters
@@ -17,16 +26,44 @@ let clouds_points_connections = []; //Line geometries for characters
 let lines_positions = []; //to get and update positions for lines
 let lines_colors = []; //to get and update colors alpha for lines
 let character_groups = []; //Groups collectives for easy manipulation
-//Store data related to user input
+//Store data related to user input----------------------------------------------------
 let total_characters = 3;
 //Development variable
 let drawline = true;
 let debug_start_num = 20;
+let randome_position = false;
+let cameraMovementTestTarget = new THREE.Vector3(40, 50 ,60);
 //User Control Variable---------------------------------------------------------------
 let raycaster;
 let mouse;
 let characters_in_scene = [];
 let current_character_index_to_control = null;
+let controls;
+//Variable for Image------------------------------------------------------------------
+let img_color_raw_data = "";
+let img_particle_count = 0;
+let img_particles_positions = [];
+let img_particles_colors = [];
+let img_particles_update_positions = [];
+let img_lines_positions;
+let img_lines_colors;
+let img_line_mesh;
+let img_point_cloud;
+let img_data = []; //Store Velocity or other attributes related to the movements
+let img_group;
+//Camera Movement Tween Variable
+let cameraPositionTween;
+let cameraLookAtTween;
+let cameraMovmentTime = 4000;
+let characterIndexToMove = 0;
+let prevCharacterIndexToMove = 0; //To Make a whole trip
+let indexMapToArrayIndex = {};
+//Trip Variable
+let allTheWords = ["我的爷爷", "家在南方", "有关死亡", "坐上一天", "不一样"];
+let currentTripProgress =  0;
+let currentOffset = 0;
+
+
 
 
 //Main Loop------------------------------------------------------
@@ -39,7 +76,7 @@ document.addEventListener("mousemove", onMouseMove, false);
 //Event Related Functions----------------------------------------------------------------
 function onDocumentKeyDown(event){
     let key_code = event.which;
-    if (key_code === 32){
+    if (key_code === 82){
         reset_scene();
     }
     //Get Input From User
@@ -50,12 +87,23 @@ function onDocumentKeyDown(event){
             // reset_scene();
             for (let i=0; i<characters.length; i++){
                 let query_info= {use_name: true, name: characters[i], id: i};
-                get_character(query_info, i);
+                get_character(query_info, total_characters, 0);
             }
             document.getElementById("characters_input").value = "";
             total_characters += characters.length;
+            console.log(total_characters);
         }
     }
+
+
+    if (key_code === 32){
+        if (character_groups.length === total_characters){
+            moveToCharacter(characterIndexToMove);
+        }
+    }
+
+
+
 }
 
 function onMouseMove(event){
@@ -103,8 +151,8 @@ function extractNumber(input){
         return result;
     }
 }
-//-------------------------------------------------------------------------------------------------------
 
+//Scene Related Function-------------------------------------------------------------------------------------------------------
 function reset_scene(){
     console.log("Reset the Scene");
     for( let i = scene.children.length - 1; i >= 0; i--) {
@@ -122,10 +170,164 @@ function reset_scene(){
     character_groups = [];
     total_characters = 0;
     characters_in_scene = [];
+    characterIndexToMove = 0;
+    indexMapToArrayIndex = {};
+}
+
+function get_image(){
+    let img = document.getElementById('memory_image');
+    let canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+    for(let i = 0; i<img.width; i++){
+        for(let j=0; j<img.height; j++){
+            let position_data_to_add = [j, i, 0];
+            let color_data = canvas.getContext('2d').getImageData(i, j, 1, 1).data;
+            let color_data_to_add = [color_data[0], color_data[1], color_data[2]];
+            img_particles_positions = img_particles_positions.concat(position_data_to_add);
+            img_particles_colors = img_particles_colors.concat(color_data_to_add);
+        }
+    }
+    // Add image particles to the scene
+    let particleCount;
+    let linePositions;
+    let lineColors;
+    let linesMesh;
+    let particles;
+    let particlePositions;
+    let particleColors;
+    let pointCloud; //current point cloud for the character
+
+    particleCount = img_particles_positions.length / 3;
+    img_particle_count = particleCount;
+    img_group = new THREE.Group();
+    scene.add(img_group);
+
+    let segments = maxParticleCount * maxParticleCount;
+
+    img_lines_positions = new Float32Array( segments * 3 );
+    img_lines_colors = new Float32Array( segments * 3 );
+
+    let pMaterial = new THREE.PointsMaterial( {
+        vertexColors: THREE.VertexColors,
+        size: 3,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        sizeAttenuation: false
+    } );
+
+    let step = 1;
+    particles = new THREE.BufferGeometry();
+    particlePositions = new Float32Array( particleCount * 3);
+    particleColors = new Float32Array(particleCount * 3);
+
+    for ( let i = 0; i < particleCount; i+=step) {
+
+        let y = 100 - img_particles_positions[i * 3];
+        let x = img_particles_positions[i * 3 + 1];
+        // let z = flattend_particle_positions[i * 3 + 2];
+        // let z = Math.floor(Math.random()*2);
+        let peak = 10;
+        particlePositions[ i * 3     ] = x - img.width/2;
+        particlePositions[ i * 3 + 1 ] = y;
+        particlePositions[ i * 3 + 2 ] = Math.floor(10*Math.random());
+        let r = img_particles_colors[i*3]/255;
+        let g = img_particles_colors[i*3+1]/255;
+        let b = img_particles_colors[i*3+2]/255;
+        particleColors[ i * 3     ] = r;
+        particleColors[ i * 3 + 1 ] = g;
+        particleColors[ i * 3 + 2 ] = b;
+    }
+
+    img_particles_update_positions = particlePositions;
+    let dir_list = [1, -1];
+    let shape_holder_efficient = 10;
+    let vel_scale = 2;
+    for (let i=0; i < particleCount; i++){
+        let dir = dir_list[Math.floor(Math.random()*2)];
+        img_data.push( {
+            velocity: new THREE.Vector3(0,0,dir*(Math.random() * vel_scale) * 0.5),
+            numConnections: 0
+        } );
+        // }
+    }
+
+    particles.setDrawRange( 0, particleCount);
+    particles.addAttribute( 'position', new THREE.BufferAttribute(particlePositions, 3 ).setDynamic( true ) );
+    particles.addAttribute( 'color', new THREE.BufferAttribute(particleColors, 3 ).setDynamic( true ) );
+    particles.computeBoundingSphere();
+    // create the particle system
+    pointCloud = new THREE.Points( particles, pMaterial );
+    img_point_cloud = pointCloud;
+/*    for (let i=0; i<particleCount; i++){
+        let color = THREE.Color(particleColors[i*3], particleColors[i*3+1], particleColors[i*3+2]);
+        pointCloud.geometry.colors[i] = color;
+    }*/
+    img_group.add( pointCloud );
+
+    let geometry = new THREE.BufferGeometry();
+    geometry.addAttribute( 'position', new THREE.BufferAttribute( img_lines_positions, 3 ).setDynamic( true ) );
+    geometry.addAttribute( 'color', new THREE.BufferAttribute( img_lines_colors, 3 ).setDynamic( true ) );
+    geometry.computeBoundingSphere();
+    geometry.setDrawRange( 0, 0 );
+    let material = new THREE.LineBasicMaterial( {
+        vertexColors: THREE.VertexColors,
+        blending: THREE.AdditiveBlending,
+        transparent: true
+    } );
+    if (drawline){
+        linesMesh = new THREE.LineSegments( geometry, material );
+        img_line_mesh = linesMesh;
+        img_group.add(linesMesh);
+    }
+    img_group.scale.set(2,2,2);
+
+
+}
+
+function update_image(){
+    "use strict";
+    // img_group.rotation.x += 0.01;
+    // img_group.rotation.y += 0.01;
+    // img_group.rotation.z += 0.01;
+    let vertexpos = 0;
+    let colorpos = 0;
+    let numConnected = 0;
+    let particlesData = img_data;
+    let particlePositions = img_particles_update_positions;
+    // let linePositions = lines_positions[index];
+    // let lineColors = lines_colors[index];
+    let particleCount = img_particle_count;
+
+
+    for ( let i = 0; i < particleCount; i++ )
+        particlesData[ i ].numConnections = 0;
+
+    for ( let i = 0; i < particleCount; i++) {
+
+        // get the particle
+        let particleData = particlesData[i];
+
+        particlePositions[i * 3] += particleData.velocity.x;
+        particlePositions[i * 3 + 1] += particleData.velocity.y;
+        particlePositions[i * 3 + 2] += particleData.velocity.z;
+
+        let bounding_efficient = 1;
+        if (particlePositions[i * 3] - offset * i < -imgRhalf / bounding_efficient || particlePositions[i * 3] - offset * i > imgRhalf / bounding_efficient)
+            particleData.velocity.x = -particleData.velocity.x;
+
+        if (particlePositions[i * 3 + 1] < -imgRhalf / bounding_efficient || particlePositions[i * 3 + 1] > imgRhalf / bounding_efficient)
+            particleData.velocity.y = -particleData.velocity.y;
+
+        if (particlePositions[i * 3 + 2] < -imgRhalf / bounding_efficient || particlePositions[i * 3 + 2] > imgRhalf / bounding_efficient)
+            particleData.velocity.z = -particleData.velocity.z;
+    }
+    img_point_cloud.geometry.attributes.position.needsUpdate  = true;
 }
 
 //Index is for applying offset to display on screen
-function get_character(query_info, index){
+function get_character(query_info, index, tripOffset){
     console.log("Start Getting character from database");
     let character_query = "";
     if (query_info.use_name){
@@ -146,122 +348,159 @@ function get_character(query_info, index){
     let particlesData = [];
     let pointCloud; //current point cloud for the character
 
-    let request = new XMLHttpRequest();
-    request.open('GET', character_query, false);  // `false` makes the request synchronous
-    request.send(null);
-    console.log(JSON.parse(request.responseText).data.name);
-    if (request.status === 200) {
-        flattend_particle_positions = JSON.parse(request.responseText).data.inks;
-        if (query_info.use_name){
-            characters_in_scene.push(query_info.name);
-        }
-    }
+    // let request = new XMLHttpRequest();
+    // request.open('GET', character_query, false);  // `false` makes the request synchronous
+    // request.send(null);
+    // console.log(JSON.parse(request.responseText).data.name);
+    axios.get(character_query)
+        .then(function (response) {
+            // handle success
+            console.log(response.data.data.name);
+            flattend_particle_positions = response.data.data.inks;
+            if (query_info.use_name) {
+                characters_in_scene.push(query_info.name);
+                particleCount = flattend_particle_positions.length / 3;
+                particles_counts.push(particleCount);
 
-    particleCount = flattend_particle_positions.length / 3;
-    particles_counts.push(particleCount);
+                current_group = new THREE.Group();
+                scene.add( current_group );
 
-    current_group = new THREE.Group();
-    scene.add( current_group );
+                let segments = maxParticleCount * maxParticleCount;
 
-    let segments = maxParticleCount * maxParticleCount;
+                linePositions = new Float32Array( segments * 3 );
+                lineColors = new Float32Array( segments * 3 );
 
-    linePositions = new Float32Array( segments * 3 );
-    lineColors = new Float32Array( segments * 3 );
+                let pMaterial = new THREE.PointsMaterial( {
+                    color: 0xffffff,
+                    size: 3,
+                    blending: THREE.AdditiveBlending,
+                    transparent: true,
+                    sizeAttenuation: false
+                } );
 
-    let pMaterial = new THREE.PointsMaterial( {
-        color: 0xffffff,
-        size: 3,
-        blending: THREE.AdditiveBlending,
-        transparent: true,
-        sizeAttenuation: false
-    } );
-
-    let step = 1;
-    particles = new THREE.BufferGeometry();
-    // Previously it is the maxParticleCount
-    particlePositions = new Float32Array( particleCount * 3  );
-
-
-    // Previously it is the max particle count
-    let dir_list = [-1, 1];
-    let random_y_offset = Math.floor(Math.random()*200);
-    let dir = dir_list[Math.floor(Math.random()*2)];
-    for ( let i = 0; i < particleCount; i+=step) {
-
-        //TODO: Modify the server side to account for parametric difference
-        let y = 100 - flattend_particle_positions[i * 3] + dir*random_y_offset;
-        let x = flattend_particle_positions[i * 3 + 1] + index*offset;
-        // let z = flattend_particle_positions[i * 3 + 2];
-        // let z = Math.floor(Math.random()*2);
-        let z = 0;
-        particlePositions[ i * 3     ] = x;
-        particlePositions[ i * 3 + 1 ] = y;
-        particlePositions[ i * 3 + 2 ] = z;
-    }
-    particles_positions.push(particlePositions);
+                let step = 1;
+                particles = new THREE.BufferGeometry();
+                // Previously it is the maxParticleCount
+                particlePositions = new Float32Array( particleCount * 3  );
 
 
-    let shape_holder_efficient = 10;
-    let vel_scale = 2;
-    for (let i=0; i < particleCount; i++){
-        let dir = dir_list[Math.floor(Math.random()*2)];
-        if (i%shape_holder_efficient === 0){
-            let vel = new THREE.Vector3(dir*(Math.random() * vel_scale) * 0.1, dir*(Math.random() * vel_scale) * 0.1,  dir*(Math.random() * vel_scale) * 0.1);
-            // console.log(vel);
-            particlesData.push( {
-                // velocity: new THREE.Vector3( -1 + Math.random() * 2, -1 + Math.random() * 2,  -1 + Math.random() * 2 ),
-                // velocity: new THREE.Vector3(0, 0, 0),
-                velocity: vel,
-                // velocity: new THREE.Vector3(dir*Math.floor(Math.random() * vel_scale), dir*Math.floor(Math.random() * vel_scale), dir*Math.floor(Math.random() * vel_scale)),
-                // velocity: new THREE.Vector3( -1 + Math.random() * 2, -1 + Math.random() * 2,  -1 + Math.random() * 2 ),
-                numConnections: 0
-            } );
-        }
-        else{
-            particlesData.push( {
-                // velocity: new THREE.Vector3( -1 + Math.random() * 2, -1 + Math.random() * 2,  -1 + Math.random() * 2 ),
-                // velocity: new THREE.Vector3(0, 0, 0),
-                // velocity: new THREE.Vector3(dir*Math.floor(Math.random() * vel_scale), dir*Math.floor(Math.random() * vel_scale), dir*Math.floor(Math.random() * vel_scale)),
-                velocity: new THREE.Vector3(0,0,dir*(Math.random() * vel_scale) * 0.5),
-                numConnections: 0
-            } );
-        }
-    }
-    particles_data.push(particlesData);
+                // Previously it is the max particle count
+                let dir_list = [-1, 1];
+                let random_y_offset = Math.floor(Math.random()*200);
+                let dir = dir_list[Math.floor(Math.random()*2)];
+                for ( let i = 0; i < particleCount; i+=step) {
+                    let y = 0;
+                    y = 100 - flattend_particle_positions[i * 3];
+                    // let x = flattend_particle_positions[i * 3 + 1] + index*offset;
+                    let x = flattend_particle_positions[i * 3 + 1];
+                    // let z = flattend_particle_positions[i * 3 + 2];
+                    // let z = Math.floor(Math.random()*2);
+                    let z = 0;
+                    particlePositions[ i * 3     ] = x;
+                    particlePositions[ i * 3 + 1 ] = y;
+                    particlePositions[ i * 3 + 2 ] = z;
+                }
+                particles_positions.push(particlePositions);
 
 
-    particles.setDrawRange( 0, particleCount);
-    particles.addAttribute( 'position', new THREE.BufferAttribute(particlePositions, 3 ).setDynamic( true ) );
-    particles.computeBoundingSphere();
-    // create the particle system
-    pointCloud = new THREE.Points( particles, pMaterial );
-    particles_point_clouds.push(pointCloud);
-    current_group.add( pointCloud );
-    // let  axesHelper = new THREE.AxesHelper( 100 );
-    // group.add( axesHelper );
+                let shape_holder_efficient = 10;
+                let vel_scale = 2;
+                for (let i=0; i < particleCount; i++){
+                    let dir = dir_list[Math.floor(Math.random()*2)];
+                    if (i%shape_holder_efficient === 0){
+                        let vel = new THREE.Vector3(dir*(Math.random() * vel_scale) * 0.1, dir*(Math.random() * vel_scale) * 0.1,  dir*(Math.random() * vel_scale) * 0.1);
+                        // console.log(vel);
+                        particlesData.push( {
+                            // velocity: new THREE.Vector3( -1 + Math.random() * 2, -1 + Math.random() * 2,  -1 + Math.random() * 2 ),
+                            // velocity: new THREE.Vector3(0, 0, 0),
+                            velocity: vel,
+                            // velocity: new THREE.Vector3(dir*Math.floor(Math.random() * vel_scale), dir*Math.floor(Math.random() * vel_scale), dir*Math.floor(Math.random() * vel_scale)),
+                            // velocity: new THREE.Vector3( -1 + Math.random() * 2, -1 + Math.random() * 2,  -1 + Math.random() * 2 ),
+                            numConnections: 0
+                        } );
+                    }
+                    else{
+                        particlesData.push( {
+                            // velocity: new THREE.Vector3( -1 + Math.random() * 2, -1 + Math.random() * 2,  -1 + Math.random() * 2 ),
+                            // velocity: new THREE.Vector3(0, 0, 0),
+                            // velocity: new THREE.Vector3(dir*Math.floor(Math.random() * vel_scale), dir*Math.floor(Math.random() * vel_scale), dir*Math.floor(Math.random() * vel_scale)),
+                            velocity: new THREE.Vector3(0,0,dir*(Math.random() * vel_scale) * 0.5),
+                            numConnections: 0
+                        } );
+                    }
+                }
+                particles_data.push(particlesData);
 
-    lines_positions.push(linePositions);
-    lines_colors.push(lineColors);
-    let geometry = new THREE.BufferGeometry();
-    geometry.addAttribute( 'position', new THREE.BufferAttribute( linePositions, 3 ).setDynamic( true ) );
-    geometry.addAttribute( 'color', new THREE.BufferAttribute( lineColors, 3 ).setDynamic( true ) );
-    geometry.computeBoundingSphere();
-    geometry.setDrawRange( 0, 0 );
-    let material = new THREE.LineBasicMaterial( {
-        vertexColors: THREE.VertexColors,
-        blending: THREE.AdditiveBlending,
-        transparent: true
-    } );
-    if (drawline){
-        linesMesh = new THREE.LineSegments( geometry, material );
-        clouds_points_connections.push(linesMesh);
-        current_group.add(linesMesh);
-    }
-    // current_group.rotation.x = Math.floor(Math.random() * 5);
-    current_group.rotation.y = Math.floor(Math.random() * 5);
-    // current_group.rotation.z = Math.floor(Math.random() * 5);
-    character_groups.push(current_group);
+
+                particles.setDrawRange( 0, particleCount);
+                particles.addAttribute( 'position', new THREE.BufferAttribute(particlePositions, 3 ).setDynamic( true ) );
+                particles.computeBoundingSphere();
+                // create the particle system
+                pointCloud = new THREE.Points( particles, pMaterial );
+                particles_point_clouds.push(pointCloud);
+                current_group.add( pointCloud );
+                // let  axesHelper = new THREE.AxesHelper( 100 );
+                // group.add( axesHelper );
+
+                lines_positions.push(linePositions);
+                lines_colors.push(lineColors);
+                let geometry = new THREE.BufferGeometry();
+                geometry.addAttribute( 'position', new THREE.BufferAttribute( linePositions, 3 ).setDynamic( true ) );
+                geometry.addAttribute( 'color', new THREE.BufferAttribute( lineColors, 3 ).setDynamic( true ) );
+                geometry.computeBoundingSphere();
+                geometry.setDrawRange( 0, 0 );
+                let material = new THREE.LineBasicMaterial( {
+                    vertexColors: THREE.VertexColors,
+                    blending: THREE.AdditiveBlending,
+                    transparent: true
+                } );
+                if (drawline){
+                    linesMesh = new THREE.LineSegments( geometry, material );
+                    clouds_points_connections.push(linesMesh);
+                    current_group.add(linesMesh);
+                }
+                // current_group.rotation.x = Math.floor(Math.random() * 5);
+                if (randome_position){
+                    // current_group.position.y += dir*random_y_offset;
+                    // current_group.rotation.y = Math.floor(Math.random() * 5);
+                    current_group.rotation.y = Math.PI/4;
+                }
+                // current_group.rotation.z = Math.floor(Math.random() * 5);
+                current_group.position.x += index*offset + tripOffset*offset;
+                current_group.position.z -= (index*offset) + tripOffset*offset;
+                current_group.position.y += (index*offset) + tripOffset*offset;
+                character_groups.push(current_group);
+                indexMapToArrayIndex[index] = character_groups.length - 1;
+            }
+        });
+
 }
+
+function getSumFromArray(sumArray){
+    let result;
+    for (let i=0; i<sumArray.length; i++){
+        result += sumArray[i];
+    }
+    return result;
+}
+
+
+// function getOffsetOrder(){
+//     let orderResult = [0,0,0];
+//     while
+//
+//
+//
+//
+//
+//
+// }
+
+
+
+
+
+
 
 //Helper function for animation
 function update_character(index){
@@ -341,32 +580,182 @@ function update_character(index){
         clouds_points_connections[index].geometry.setDrawRange( 0, numConnected * 2 );
         clouds_points_connections[index].geometry.attributes.position.needsUpdate = true;
         clouds_points_connections[index].geometry.attributes.color.needsUpdate = true;
+        clouds_points_connections[index].geometry.computeBoundingSphere()
     }
     particles_point_clouds[index].geometry.attributes.position.needsUpdate = true;
 
 }
 
+function moveToCharacter(characterIndex){
+    console.log(characterIndex);
+    let arrayIndex = indexMapToArrayIndex[characterIndex];
+    if (character_groups.length !== total_characters){
+        return;
+    }
+
+    if (characterIndex >= total_characters){
+        return;
+    }
+    let deepTripPosition = null;
+    if (characterIndex > 0){
+        //MOve deep into the words
+        let target = new THREE.Vector3(3,3,3);
+        let prevArrayIndex = indexMapToArrayIndex[characterIndex-1];
+        character_groups[prevArrayIndex].getWorldPosition(target);
+        deepTripPosition = new TWEEN.Tween( controls.object.position )
+        .to( {
+            x: target.x + 50,
+            y: target.y + 50,
+            // z: target.z + 250
+            z: target.z + 80
+        }, cameraMovmentTime)
+        .easing( TWEEN.Easing.Linear.None ).onUpdate( function () {
+            console.log("whatever man");
+        } );
+        let startTarget = new THREE.Vector3(controls.target.x, controls.target.y, controls.target.z);
+        let deeptripLookAt = new TWEEN.Tween(startTarget)
+            .onStart(function(){
+                deepTripPosition.start();
+            })
+            .to( {
+                x: target.x + 50,
+                y: target.y + 50,
+                z: 0,
+            }, cameraMovmentTime)
+            .easing( TWEEN.Easing.Linear.None ).onUpdate( function () {
+                controls.target.set(startTarget.x, startTarget.y, 0);
+            } )
+            .onComplete( function () {
+                // camera.lookAt(new THREE.Vector3(0,0,0));
+            } ).start();
+        // Start to move to next
+        target = new THREE.Vector3(3,3,3);
+        character_groups[arrayIndex].getWorldPosition(target);
+        cameraPositionTween = new TWEEN.Tween( controls.object.position )
+            .to( {
+                x: target.x + 50,
+                y: target.y + 50,
+                // z: target.z + 250
+                z: target.z + 240
+            }, cameraMovmentTime)
+            .easing( TWEEN.Easing.Linear.None ).onUpdate( function () {
+                console.log("whatever man");
+            } )
+            .onComplete( function () {
+            } );
+        startTarget = new THREE.Vector3(controls.target.x, controls.target.y, controls.target.z);
+        cameraLookAtTween = new TWEEN.Tween(startTarget)
+            .onStart(function(){
+               cameraPositionTween.start();
+            })
+            .to( {
+                x: target.x + 50,
+                y: target.y + 50,
+                z: 0,
+            }, cameraMovmentTime)
+            .easing( TWEEN.Easing.Linear.None ).onUpdate( function () {
+                controls.target.set(startTarget.x, startTarget.y, 0);
+            } )
+            .onComplete( function () {
+                // camera.lookAt(new THREE.Vector3(0,0,0));
+                characterIndexToMove += 1;
+            } );
+        deeptripLookAt.chain(cameraLookAtTween);
+    }
+    else {
+        let target = new THREE.Vector3(3,3,3);
+        character_groups[arrayIndex].getWorldPosition(target);
+        cameraPositionTween = new TWEEN.Tween( controls.object.position )
+            .to( {
+                x: target.x + 50,
+                y: target.y + 50,
+                // z: target.z + 250
+                z: target.z + 250
+            }, cameraMovmentTime)
+            .easing( TWEEN.Easing.Linear.None ).onUpdate( function () {
+            } )
+            .onComplete( function () {
+            } )
+            .start();
+
+        let startTarget = new THREE.Vector3(controls.target.x, controls.target.y, controls.target.z);
+        cameraLookAtTween = new TWEEN.Tween(startTarget)
+            .to( {
+                x: target.x + 50,
+                y: target.y + 50,
+                z: 0,
+            }, cameraMovmentTime)
+            .easing( TWEEN.Easing.Linear.None ).onUpdate( function () {
+                controls.target.set(startTarget.x, startTarget.y, 0);
+            } )
+            .onComplete( function () {
+                // camera.lookAt(new THREE.Vector3(0,0,0));
+                characterIndexToMove += 1;
+            } )
+            .start();
+    }
+}
+
+function get_characters(characters_to_get){
+    let chars_array = characters_to_get.split("");
+    for (let i = 0; i<chars_array.length; i++){
+        let query_info= {use_name: true, name: chars_array[i], id: ""};
+        get_character(query_info, i, currentOffset);
+    }
+    currentTripProgress += 1;
+    console.log(currentTripProgress);
+    for (let i=0; i<currentTripProgress; i++){
+        console.log("wtf");
+        if (i < allTheWords.length){
+            console.log(allTheWords[i].length);
+            currentOffset += allTheWords[i].length;
+        }
+    }
+}
+
+
+
+
+
+
+
 function init() {
+    let x = document.getElementById("myAudio");
+    x.play();
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
     container = document.getElementById( 'container' );
-    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 1, 4000 );
+    camera = new THREE.PerspectiveCamera( 90, window.innerWidth / window.innerHeight, 0.1, 4000 );
     // camera.position.z = 1750;
     camera.position.z = 500;
 
-    let controls = new THREE.OrbitControls( camera, container );
-
+    controls = new THREE.OrbitControls( camera, container );
+    // controls = new THREE.TrackballControls( camera, container);
+    // controls.rotateSpeed = 0.5;
+    // controls.minDistance = 500;
+    // controls.maxDistance = 6000;
+    // controls.noZoom = false;
+    // controls.noPan = false;
+    controls.addEventListener( 'change', render );
     scene = new THREE.Scene();
+    // Camera Movement
     // for (let i=debug_start_num; i<20+total_characters; i++){
     //     let query_info= {use_name: false, name: "", id: i};
     //     get_character(query_info, i-debug_start_num);
     // }
-    let query_info= {use_name: true, name: "旺", id: ""};
-    get_character(query_info, 0);
-    query_info= {use_name: true, name: "天", id: ""};
-    get_character(query_info, 1);
-    query_info= {use_name: true, name: "下", id: ""};
-    get_character(query_info, 2);
+
+    // let query_info= {use_name: true, name: "我", id: ""};
+    // get_character(query_info, 0);
+    // query_info= {use_name: true, name: "的", id: ""};
+    // get_character(query_info, 1);
+    // query_info= {use_name: true, name: "爷", id: ""};
+    // get_character(query_info, 2);
+    // query_info= {use_name: true, name: "爷", id: ""};
+    // get_character(query_info, 3);
+    // get_characters(allTheWords[0]);
+    get_characters(allTheWords[4]);
+    total_characters = 3;
+
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
     renderer.setPixelRatio( window.devicePixelRatio );
@@ -390,9 +779,24 @@ function onWindowResize() {
 }
 
 function animate() {
-    for (let i=0; i<total_characters; i++){
-        update_character(i);
+    // let distance = 50;
+    // console.log(camera.position);
+    // let currentLookAt = (new THREE.Vector3( 0, 0, -distance)).applyQuaternion( camera.quaternion ).add( camera.position );
+    // console.log(currentLookAt);
+    // console.log("--------------");
+    if (character_groups.length === total_characters){
+        for (let i=0; i<total_characters; i++){
+            update_character(i);
+        }
     }
+    if (prevCharacterIndexToMove !== characterIndexToMove){
+        moveToCharacter(characterIndexToMove);
+        prevCharacterIndexToMove = characterIndexToMove;
+    }
+
+    TWEEN.update();
+    controls.update(); // controls.update();
+    // update_image();
     requestAnimationFrame( animate );
     stats.update();
     render();
@@ -411,7 +815,6 @@ function render() {
                 document.getElementById("zi_x_rotation").textContent = character_groups[i].rotation.x;
                 document.getElementById("zi_y_rotation").textContent = character_groups[i].rotation.y;
                 document.getElementById("zi_z_rotation").textContent = character_groups[i].rotation.z;
-                current_character_index_to_control = i;
             }
         }
     }
@@ -419,4 +822,5 @@ function render() {
     // group.rotation.y = time * 0.1;
     renderer.render( scene, camera );
 }
+
 
