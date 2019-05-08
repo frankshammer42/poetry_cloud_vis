@@ -2,8 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="fe0fe188-3455-49aa-b758-3a264cdc8f04" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/index.html" afterPath="$PROJECT_DIR$/index.html" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/js/cloud_visualization.js" afterPath="$PROJECT_DIR$/js/cloud_visualization.js" />
     </list>
     <ignored path="$PROJECT_DIR$/.tmp/" />
@@ -57,8 +55,8 @@
       <file leaf-file-name="cloud_visualization.js" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/js/cloud_visualization.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="7710">
-              <caret line="812" column="12" lean-forward="false" selection-start-line="812" selection-start-column="12" selection-end-line="812" selection-end-column="12" />
+            <state relative-caret-position="207">
+              <caret line="650" column="51" lean-forward="false" selection-start-line="650" selection-start-column="51" selection-end-line="650" selection-end-column="51" />
               <folding>
                 <element signature="n#!!doc" expanded="true" />
                 <element signature="n#!!block;n#submitTransform#0" expanded="false" />
@@ -128,8 +126,8 @@
         <option value="$PROJECT_DIR$/css/style.css" />
         <option value="$PROJECT_DIR$/data/color_data" />
         <option value="$PROJECT_DIR$/shaders/vertextDisplacement.glsl" />
-        <option value="$PROJECT_DIR$/js/cloud_visualization.js" />
         <option value="$PROJECT_DIR$/index.html" />
+        <option value="$PROJECT_DIR$/js/cloud_visualization.js" />
       </list>
     </option>
   </component>
@@ -219,12 +217,12 @@
       <workItem from="1556676337659" duration="6716000" />
       <workItem from="1557069541065" duration="590000" />
       <workItem from="1557084397480" duration="44432000" />
-      <workItem from="1557263163476" duration="6612000" />
+      <workItem from="1557263163476" duration="6858000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="71322000" />
+    <option name="totallyTimeSpent" value="71568000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -686,10 +684,15 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/imgs/3.jpg">
+      <provider selected="true" editor-type-id="images">
+        <state />
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/js/cloud_visualization.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="7710">
-          <caret line="812" column="12" lean-forward="false" selection-start-line="812" selection-start-column="12" selection-end-line="812" selection-end-column="12" />
+        <state relative-caret-position="207">
+          <caret line="650" column="51" lean-forward="false" selection-start-line="650" selection-start-column="51" selection-end-line="650" selection-end-column="51" />
           <folding>
             <element signature="n#!!doc" expanded="true" />
             <element signature="n#!!block;n#submitTransform#0" expanded="false" />
@@ -699,11 +702,6 @@
             <element signature="n#!!block;n#update_character#0" expanded="false" />
           </folding>
         </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/imgs/3.jpg">
-      <provider selected="true" editor-type-id="images">
-        <state />
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/index.html">
