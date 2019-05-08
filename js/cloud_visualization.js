@@ -54,15 +54,18 @@ let img_group;
 //Camera Movement Tween Variable
 let cameraPositionTween;
 let cameraLookAtTween;
-let cameraMovmentTime = 6000;
+let cameraMovmentTime = 2000;
 let characterIndexToMove = 0;
 let prevCharacterIndexToMove = 0; //To Make a whole trip
 let indexMapToArrayIndex = {};
 //Trip Variable
-let allTheWords = ["我的爷爷", "家在南方", "有关死亡", "坐上一天", "不一样"];
+let allTheWords = ["我爷爷", "在南方", "父亲", "一百分", "不一样"];
 let currentTripProgress =  0;
 let currentOffset = 0;
-
+//Background Variable
+let backgroundMesh;
+let backgroundScene;
+let backgroundCamera;
 
 
 
@@ -94,16 +97,11 @@ function onDocumentKeyDown(event){
             console.log(total_characters);
         }
     }
-
-
     if (key_code === 32){
         if (character_groups.length === total_characters){
             moveToCharacter(characterIndexToMove);
         }
     }
-
-
-
 }
 
 function onMouseMove(event){
@@ -172,6 +170,7 @@ function reset_scene(){
     characters_in_scene = [];
     characterIndexToMove = 0;
     indexMapToArrayIndex = {};
+    prevCharacterIndexToMove = 0;
 }
 
 function get_image(){
@@ -466,41 +465,18 @@ function get_character(query_info, index, tripOffset){
                     current_group.rotation.y = Math.PI/4;
                 }
                 // current_group.rotation.z = Math.floor(Math.random() * 5);
-                current_group.position.x += index*offset + tripOffset*offset;
-                current_group.position.z -= (index*offset) + tripOffset*offset;
-                current_group.position.y += (index*offset) + tripOffset*offset;
+                // current_group.position.x += index*offset + tripOffset*offset;
+                // current_group.position.z -= (index*offset) + tripOffset*offset;
+                // current_group.position.y += (index*offset) + tripOffset*offset;
+                current_group.position.x += index*offset;
+                current_group.position.z -= (index*offset);
+                current_group.position.y += (index*offset);
                 character_groups.push(current_group);
                 indexMapToArrayIndex[index] = character_groups.length - 1;
             }
         });
 
 }
-
-function getSumFromArray(sumArray){
-    let result;
-    for (let i=0; i<sumArray.length; i++){
-        result += sumArray[i];
-    }
-    return result;
-}
-
-
-// function getOffsetOrder(){
-//     let orderResult = [0,0,0];
-//     while
-//
-//
-//
-//
-//
-//
-// }
-
-
-
-
-
-
 
 //Helper function for animation
 function update_character(index){
@@ -586,6 +562,13 @@ function update_character(index){
 
 }
 
+function changeSceneBackground(currentIndex){
+    scene.background = null;
+    let file_name = "imgs/" + currentIndex.toString() + ".jpg";
+    let texture  = new THREE.TextureLoader().load(file_name);
+    scene.background = texture;
+}
+
 function moveToCharacter(characterIndex){
     console.log(characterIndex);
     let arrayIndex = indexMapToArrayIndex[characterIndex];
@@ -607,7 +590,7 @@ function moveToCharacter(characterIndex){
             x: target.x + 50,
             y: target.y + 50,
             // z: target.z + 250
-            z: target.z + 80
+            z: target.z + 110
         }, cameraMovmentTime)
         .easing( TWEEN.Easing.Linear.None ).onUpdate( function () {
             console.log("whatever man");
@@ -659,6 +642,16 @@ function moveToCharacter(characterIndex){
             .onComplete( function () {
                 // camera.lookAt(new THREE.Vector3(0,0,0));
                 characterIndexToMove += 1;
+                if (characterIndex === total_characters-1){
+                    currentTripProgress += 1;
+                    if (currentTripProgress < allTheWords.length){
+                        setTimeout(changeSceneBackground, 3000, currentTripProgress);
+                        setTimeout(reset_scene, 3000);
+                        setTimeout(sceneResetCamera, 3500);
+                        setTimeout(get_characters, 4000, allTheWords[currentTripProgress]);
+                    }
+
+                }
             } );
         deeptripLookAt.chain(cameraLookAtTween);
     }
@@ -696,32 +689,49 @@ function moveToCharacter(characterIndex){
     }
 }
 
+function sceneResetCamera(){
+    controls.reset();
+    controls.object.position.set(Math.floor(Math.random()*300), Math.floor(Math.random()*300), Math.floor(Math.random()*300));
+}
+
+
 function get_characters(characters_to_get){
     let chars_array = characters_to_get.split("");
-    for (let i = 0; i<chars_array.length; i++){
-        let query_info= {use_name: true, name: chars_array[i], id: ""};
-        get_character(query_info, i, currentOffset);
-    }
-    currentTripProgress += 1;
-    console.log(currentTripProgress);
+    total_characters = chars_array.length;
     for (let i=0; i<currentTripProgress; i++){
         console.log("wtf");
         if (i < allTheWords.length){
             console.log(allTheWords[i].length);
-            currentOffset += allTheWords[i].length;
+            currentOffset += allTheWords[i].length-1;
         }
+    }
+    for (let i = 0; i<chars_array.length; i++){
+        let query_info= {use_name: true, name: chars_array[i], id: ""};
+        get_character(query_info, i, currentOffset);
     }
 }
 
 
-
-
-
-
-
 function init() {
-    let x = document.getElementById("myAudio");
-    x.play();
+    // let x = document.getElementById("myAudio");
+    // x.play();
+    //Background
+    let texture  = new THREE.TextureLoader().load('imgs/0.jpg');
+    // backgroundMesh = new THREE.Mesh(
+    //     new THREE.PlaneGeometry(2, 2, 0),
+    //     new THREE.MeshBasicMaterial({
+    //         map: texture
+    //     })
+    // );
+    //
+    // backgroundMesh.material.depthTest = false;
+    // backgroundMesh.material.depthWrite = false;
+    //
+    // backgroundScene = new THREE.Scene();
+    // backgroundCamera = new THREE.Camera();
+    // backgroundScene.add( backgroundCamera );
+    // backgroundScene.add( backgroundMesh );
+
     raycaster = new THREE.Raycaster();
     mouse = new THREE.Vector2();
     container = document.getElementById( 'container' );
@@ -738,6 +748,7 @@ function init() {
     // controls.noPan = false;
     controls.addEventListener( 'change', render );
     scene = new THREE.Scene();
+    scene.background = texture;
     // Camera Movement
     // for (let i=debug_start_num; i<20+total_characters; i++){
     //     let query_info= {use_name: false, name: "", id: i};
@@ -753,8 +764,8 @@ function init() {
     // query_info= {use_name: true, name: "爷", id: ""};
     // get_character(query_info, 3);
     // get_characters(allTheWords[0]);
-    get_characters(allTheWords[4]);
-    total_characters = 3;
+    get_characters(allTheWords[currentTripProgress]);
+    // total_characters = 3;
 
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -766,8 +777,8 @@ function init() {
 
     container.appendChild( renderer.domElement );
 
-    stats = new Stats();
-    container.appendChild( stats.dom );
+    // stats = new Stats();
+    // container.appendChild( stats.dom );
 
     window.addEventListener( 'resize', onWindowResize, false );
 }
@@ -798,7 +809,7 @@ function animate() {
     controls.update(); // controls.update();
     // update_image();
     requestAnimationFrame( animate );
-    stats.update();
+    // stats.update();
     render();
 }
 
@@ -820,6 +831,9 @@ function render() {
     }
     let time = Date.now() * 0.001;
     // group.rotation.y = time * 0.1;
+    // load img texture
+    // renderer.clear();
+    // renderer.render( backgroundScene, backgroundCamera);
     renderer.render( scene, camera );
 }
 
