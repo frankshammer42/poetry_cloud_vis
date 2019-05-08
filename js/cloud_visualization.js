@@ -54,7 +54,7 @@ let img_group;
 //Camera Movement Tween Variable
 let cameraPositionTween;
 let cameraLookAtTween;
-let cameraMovmentTime = 2000;
+let cameraMovmentTime = 4000;
 let characterIndexToMove = 0;
 let prevCharacterIndexToMove = 0; //To Make a whole trip
 let indexMapToArrayIndex = {};
@@ -74,6 +74,7 @@ init();
 animate();
 document.addEventListener("keydown", onDocumentKeyDown, false);
 document.addEventListener("mousemove", onMouseMove, false);
+document.addEventListener("click", onMouseClick, false);
 
 
 //Event Related Functions----------------------------------------------------------------
@@ -115,6 +116,12 @@ function openNav() {
 
 function closeNav() {
     document.getElementById("mySidenav").style.width = "0";
+}
+
+function onMouseClick(event){
+    let x = document.getElementById("myAudio");
+    x.play();
+    console.log("yep");
 }
 
 function submitTransform() {
