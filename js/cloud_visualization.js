@@ -648,7 +648,7 @@ function moveToCharacter(characterIndex){
                         setTimeout(changeSceneBackground, 3000, currentTripProgress);
                         setTimeout(reset_scene, 3000);
                         setTimeout(sceneResetCamera, 3500);
-                        setTimeout(get_characters, 5000, allTheWords[currentTripProgress]);
+                        setTimeout(get_characters, 7000, allTheWords[currentTripProgress]);
                     }
 
                 }
